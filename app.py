@@ -73,4 +73,4 @@ def discord_study_tv():
     }
 
 if __name__ == '__main__':
-    app.run(port=80)
+    app.run(host='82.165.56.175', port=80)
