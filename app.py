@@ -72,5 +72,7 @@ def discord_study_tv():
         "success": True
     }
 
+app.config["DEBUG"] = True
+
 if __name__ == '__main__':
     app.run(host='82.165.56.175', port=80)
