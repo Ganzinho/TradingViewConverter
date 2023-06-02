@@ -62,6 +62,7 @@ class Ftx:
                     "success": False,
                     "error": req['error']
                 }
+        
         return req
     
     # ================== ORDER FUNCTIONS ==================

@@ -94,3 +94,17 @@
         "chart_url" : "https://www.tradingview.com/chart/jbSLq0oe"
     }
 }
+
+{
+    "ticker": "BTC-USDT-SWAP",
+    "tdMode" : "isolated",
+    "exchange": "OKX",
+    "type": "market",
+    "action": "{{strategy.order.action}}",
+    "message": "{{strategy.order.id}}",
+    "posSide": "{{strategy.market_position}}",
+    "passphrase": "lodDaRf567_263gD",
+    "subaccount": "OKX",
+    "pre_posSide": "{{strategy.prev_market_position}}"
+		
+}

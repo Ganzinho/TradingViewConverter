@@ -2,6 +2,7 @@ import logbot
 import json, os, config
 from ftxapi import Ftx
 from bybitapi import ByBit
+from okxapi import Okx
 
 subaccount_name = 'SUBACCOUNT_NAME'
 leverage = 1.0
@@ -19,6 +20,7 @@ def global_var(payload):
     global risk
     global api_key
     global api_secret
+    global passphrase
 
     subaccount_name = payload['subaccount']
 
@@ -44,6 +46,21 @@ def global_var(payload):
 
         api_secret = os.environ.get('API_SECRET_MYBYBITACCOUNT', config.API_SECRET_MYBYBITACCOUNT)
 
+    elif subaccount_name == 'OKX':
+        leverage = os.environ.get('LEVERAGE_OKX', config.LEVERAGE_OKX)
+        leverage = float(leverage)
+
+        risk = os.environ.get('RISK_OKX', config.RISK_OKX)
+        risk = float(risk) / 100
+
+        api_key = os.environ.get('API_KEY_OKX', config.API_KEY_OKX)
+
+        api_secret = os.environ.get('API_SECRET_OKX', config.API_SECRET_OKX)
+
+        passphrase = os.environ.get('PASSPHRASE_OKX', config.PASSPHRASE_OKX)
+        
+        logbot.logs('OKX exchange activated')
+    
     else:
         logbot.logs(">>> /!\ Subaccount name not found", True)
         return {
@@ -70,7 +87,8 @@ def order(payload: dict):
         'leverage': leverage,
         'risk': risk,
         'api_key': api_key,
-        'api_secret': api_secret
+        'api_secret': api_secret,
+        'passphrase': passphrase
     }
     exchange = payload['exchange']
     
@@ -81,6 +99,8 @@ def order(payload: dict):
             exchange_api = Ftx(init_var)
         elif exchange.upper() == 'BYBIT':
             exchange_api = ByBit(init_var)
+        elif exchange.upper() == 'OKX':
+            exchange_api = Okx(init_var)
     except Exception as e:
         logbot.logs('>>> /!\ An exception occured : {}'.format(e), True)
         return {
@@ -92,6 +112,8 @@ def order(payload: dict):
     logbot.logs('>>> Subaccount : {}'.format(subaccount_name))
 
     #   FIND THE APPROPRIATE TICKER IN DICTIONNARY
+        
+
     ticker = ""
     if exchange.upper() == 'BYBIT':
         ticker = payload['ticker']
@@ -111,13 +133,13 @@ def order(payload: dict):
     #   ALERT MESSAGE CONDITIONS
     if payload['message'] == 'entry':
         logbot.logs(">>> Order message : 'entry'")
-        exchange_api.exit_position(ticker)
+        exchange_api.exit_position(payload, ticker)
         orders = exchange_api.entry_position(payload, ticker)
         return orders
 
-    elif payload['message'] == 'exit':
+    elif payload['message'] == 'ExitShort' or payload['message'] == 'ExitLong':
         logbot.logs(">>> Order message : 'exit'")
-        exit_res = exchange_api.exit_position(ticker)
+        exit_res = exchange_api.exit_position(payload, ticker)
         return exit_res
 
     elif payload['message'][-9:] == 'breakeven':
