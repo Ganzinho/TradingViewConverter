@@ -137,7 +137,7 @@ def order(payload: dict):
         orders = exchange_api.entry_position(payload, ticker)
         return orders
 
-    elif payload['message'] == 'ExitShort' or payload['message'] == 'ExitLong':
+    elif payload['message'] == 'exit':
         logbot.logs(">>> Order message : 'exit'")
         exit_res = exchange_api.exit_position(payload, ticker)
         return exit_res

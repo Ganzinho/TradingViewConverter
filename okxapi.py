@@ -61,10 +61,10 @@ class Okx():
         else:
             return data
         
-    def _try_request(self, method: str, path: str, params=None):
+    def _try_request(self, method: str, path: str, params = None, body=None):
         try:
-            if params:
-                req = self._request(method, path, json=params)
+            if params or body:
+                req = self._request(method, path, params = params, json=body)
             else:
                 req = self._request(method, path)
         except Exception as e:
@@ -111,14 +111,19 @@ class Okx():
                         "error" : f"order type '{order_type}' is unknown"
                     }
     # 0/ get the size
-        r = self._try_request('GET', 'api/v5/account/balance')
-
-    
-        free_collateral_str = r['data'][0]['details'][0]['availBal']
-        free_collateral_float= float(free_collateral_str)
-        free_collateral = free_collateral_float * 0.90
-        logbot.logs('>>> Found free collateral : {}'.format(free_collateral))
-        size = free_collateral
+        params = {
+            "instId": ticker,
+            "tdMode": tdMode
+        }
+        print(params)
+        r = self._try_request('GET', 'api/v5/account/max-size', params)
+        
+        size = 0
+        if side == 'buy':
+            size = r['data'][0]['maxBuy']
+        else:
+            size = r['data'][0]['maxSell']
+        logbot.logs('>>> Max size buy : {}'.format(size))
         
         exe_price = None if order_type == "market" else payload['price']
         order_payload = {
@@ -128,10 +133,10 @@ class Okx():
                 "posSide": posSide,
                 "ordType": order_type,
                 "px": exe_price,
-                "sz": 1
+                "sz": size
             }
 
-        r = self._try_request('POST', 'api/v5/trade/order', order_payload)
+        r = self._try_request('POST', 'api/v5/trade/order', body = order_payload)
         if r['code'] != 0:
             r['orders'] = orders
             return r
@@ -151,7 +156,7 @@ class Okx():
         posSide = payload['posSide']
         
         if posSide == 'flat':
-            posSide = payload['']
+            posSide = payload['pre_posSide']
         
         close_order_payload = {
             "instId": ticker,
@@ -160,7 +165,7 @@ class Okx():
             
         }
     
-        r = self._try_request('POST', "api/v5/trade/close-position", close_order_payload) 
+        r = self._try_request('POST', "api/v5/trade/close-position", body = close_order_payload) 
         if r['code'] != 0:
             r['orders'] = orders
             return r
