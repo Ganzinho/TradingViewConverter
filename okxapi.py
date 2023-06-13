@@ -143,11 +143,52 @@ class Okx():
         orders.append(r['result'])
         logbot.logs(f">>> Order {order_type} posted with success")
         
+        trailingstop = payload['trailing_stop']
+        trailingstop_value = payload['trailing%']
+        
+        if trailingstop == 'true':
+            self.trailig_order(self, payload, ticker, size, trailingstop_value)
+        
         return {
             "success": True,
             "orders": orders
         }
-    
+        
+    def trailig_order(self, payload: dict, ticker, size, trailingstop):
+        orders = []
+        side = 'buy'
+        if payload['action'] == 'sell':
+            side = 'buy'
+        else:
+            side = 'sell'
+            
+        tdMode = payload['tdMode']
+       
+        order_payload = {
+                "instId": ticker,
+                "tdMode": tdMode,
+                "side":side,
+                "ordType":"move_order_stop",
+                "sz":size,
+                "callbackRatio":trailingstop,
+            }
+
+        r = self._try_request('POST', 'api/v5/trade/order-algo', body = order_payload)
+        
+        if r['code'] != 0:
+            r['orders'] = orders
+            return r
+        orders.append(r['result'])
+        logbot.logs(f">>> Trailing order {orders} posted with success")
+        
+        return {
+            "success": True,
+            "orders": orders
+        }
+        
+        
+        
+
     def exit_position(self, payload: dict, ticker):
         
         orders = []
