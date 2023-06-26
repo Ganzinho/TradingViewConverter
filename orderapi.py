@@ -133,7 +133,6 @@ def order(payload: dict):
     #   ALERT MESSAGE CONDITIONS
     if payload['message'] == 'entry':
         logbot.logs(">>> Order message : 'entry'")
-        exchange_api.exit_position(payload, ticker)
         orders = exchange_api.entry_position(payload, ticker)
         return orders
 

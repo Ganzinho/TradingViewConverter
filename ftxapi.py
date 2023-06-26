@@ -90,7 +90,7 @@ class Ftx:
         logbot.logs('>>> Found free collateral : {}'.format(free_collateral))
         size = (free_collateral * self.risk) / abs(payload['price'] - stop_loss)
         if (size / (free_collateral / payload['price'])) > 20:
-            size = (free_collateral / payload['price']) * self.leverage
+            size = (free_collateral / payload['price']) * self.leverage - 2
         
         logbot.logs(f">>> SIZE : {size}, SIDE : {side}, PRICE : {payload['price']}, SL : {stop_loss}, TP : {take_profit}")
 
