@@ -1,0 +1,4 @@
+LEVERAGE = None
+RISK = None
+API_KEY = None
+API_SECRET = None

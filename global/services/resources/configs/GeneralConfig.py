@@ -1,0 +1,5 @@
+import os
+
+PORT = 5000
+
+WEBHOOK_PASSPHRASE = "lodDaRf567_263gD"
