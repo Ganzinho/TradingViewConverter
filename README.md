@@ -81,7 +81,7 @@ When deciding to take, close or exit a position with **strategy.*entry/close/exi
 
 ___
 
-Now we can set the alert on TradingView. When you do that you will need to specify the **Webhook URL** that would be https://the-link-of-your-flask-app.com/your-route, "your-route" would be "tradingview-to-webhook-order" in our example ([app.py](app.py)).
+Now we can set the alert on TradingView. When you do that you will need to specify the **Webhook URL** that would be https://the-link-of-your-flask-app.com/your-route, "your-route" would be "tradingview-to-webhook-order" in our example ([app.py](global/controller/app.py)).
 
 ```python
 @app.route("/tradingview-to-webhook-order", methods=['POST'])
@@ -137,9 +137,9 @@ Then we will need to compare the stored password with the one we received. So be
 webhook_passphrase = os.environ.get('WEBHOOK_PASSPHRASE', config.WEBHOOK_PASSPHRASE)
 ```
 
-The main password is saved with the Heroku environment variables so we will try to get this one first, however if you are deploying the app locally it won't find it so you will need to write it in the [config.py](config.py) file, otherwise just set it to *None*.
+The main password is saved with the Heroku environment variables so we will try to get this one first, however if you are deploying the app locally it won't find it so you will need to write it in the [config.py](global/services/resources/configs/GeneralConfig.py) file, otherwise just set it to *None*.
 
-When that's done we can verify that the payload actually contains a password before check if it is the right one and finally calling the ```order()``` function from [orderapi.py](orderapi.py).
+When that's done we can verify that the payload actually contains a password before check if it is the right one and finally calling the ```order()``` function from [orderapi.py](global/services/orders/orderapi.py).
 
 ```python
 import logbot
@@ -195,7 +195,7 @@ try:
     # ...
 ```
 
-You need to know that the **tickers** names in the exchanges and the ones in TradingView might be different, for instance in tradingview the ticker for the BTC/USD future contract of the FTX exchange is *BTCPERP* while in the FTX app it is *BTC-PERP*. So for that we have created a json file ([tickers.json](tickers.json)) that indexes for every exchange its tradingview ticker with its original one.
+You need to know that the **tickers** names in the exchanges and the ones in TradingView might be different, for instance in tradingview the ticker for the BTC/USD future contract of the FTX exchange is *BTCPERP* while in the FTX app it is *BTC-PERP*. So for that we have created a json file ([tickers.json](global/services/data/tickers.json)) that indexes for every exchange its tradingview ticker with its original one.
 
 ```json
 {
@@ -208,10 +208,11 @@ You need to know that the **tickers** names in the exchanges and the ones in Tra
 }
 ```
 And the python code :
+
 ```python
 #   FIND THE APPROPRIATE TICKER IN DICTIONNARY
 ticker = ""
-with open('tickers.json') as json_file:
+with open('global/services/data/tickers.json') as json_file:
     tickers = json.load(json_file)
     try:
         ticker = tickers[exchange.lower()][payload['ticker']]
@@ -315,7 +316,7 @@ logbot.logs(">>> Order message : 'entry'")
 logbot.logs(">>> /!\ Invalid passphrase", True)
 ```
 
-This ```logs()``` function from [logbot.py](logbot.py) act as a console **log printer** but also sends the logs to a discord channel you've specified so that you can easily at any time **track your bot's actions**.
+This ```logs()``` function from [logbot.py](global/services/discord/logbot.py) act as a console **log printer** but also sends the logs to a discord channel you've specified so that you can easily at any time **track your bot's actions**.
 
 ![Discord Logs Channel](./README_images/DiscordLogs.PNG "Discord Logs Channel")
 
@@ -422,7 +423,7 @@ The alert message needs to be modified a bit, here is how it will look like if s
 
 As you can see it's very much similar to the first payload but we've also added the **chart url** so that it can directly be sent in the discord channel along the other parameters.
 
-The webhook url also need to be changed to https://the-link-of-your-flask-app.com/tradingview-to-discord-study since this is how it is set in [app.py](app.py).
+The webhook url also need to be changed to https://the-link-of-your-flask-app.com/tradingview-to-discord-study since this is how it is set in [app.py](global/controller/app.py).
 
 ```python
 @app.route("/tradingview-to-discord-study", methods=['POST'])
@@ -431,7 +432,7 @@ def discord_study_tv():
 
 ___
 
-This lattest route works almost exactly as the first one except instead of calling the *order* function to place an order it will call ```study_alert()``` from [logbot.py](logbot.py). Like  ```logs()``` *```study_alert(json.dumps(data), chart_url)```* send messages to a specified discord channel including the payload and the chart url.
+This lattest route works almost exactly as the first one except instead of calling the *order* function to place an order it will call ```study_alert()``` from [logbot.py](global/services/discord/logbot.py). Like  ```logs()``` *```study_alert(json.dumps(data), chart_url)```* send messages to a specified discord channel including the payload and the chart url.
 
 ```python
 import requests
@@ -456,7 +457,7 @@ def study_alert(message, chart_url):
 
 ___
 
-The discord bot files is not hosted on Heroku but instead [Repl.it](https://replit.com/) however you can still find them [here](discord_bot/discord_main.py) under ./discord_bot/.
+The discord bot files is not hosted on Heroku but instead [Repl.it](https://replit.com/) however you can still find them [here](global/services/discord/discord_bot/discord_main.py) under ./discord_bot/.
 
 Our discord bot will read every message sent to the chat and if one start with ```!payload``` it will **load what comes next** as a **json** and add to it the **webhook passphrase** needed by our app for which it will send a post request including the payload.
 
