@@ -1,7 +1,4 @@
-# <h1 align="center"> Webhook TV Trading Bot 📈🤖 </h1>
-
-![](./README_images/AlgobotBanner.png)
-
+# <h1 align="center"> TradingView cryptocurrency Bot 📈🤖 </h1>
 ___
 
 1. [Presentation](#presentation)
@@ -23,26 +20,21 @@ ___
     3. [Code Review](#codereview)
 6. [Links and Addresses](#linksaddresses)
 
-
-*If you ever decide to sign up to any of the application please use one of my link as we both benefit from it, thank you.*
-
 Also, if you ever notice something that can be improved or corrected or even add a completely new dimension please de not hesitate to **pull request**.
 
 
 # Presentation <a name="presentation"></a>
 
-**A Flask app receiving alerts from TradingView and automatically sends a POST order to an integrated exchange API such as FTX and ByBit (Binance to come). Can also deliver the alert and the chart to discord where you can decide whether or not to take that trade through a Discord bot.**
+**A Flask app receiving alerts from TradingView and automatically sends a POST order to an integrated exchange API such as OKX and ByBit (Binance to come). Can also deliver the alert and the chart to discord where you can decide whether or not to take that trade through a Discord bot.**
 
-In order to build that app I relied on two great videos to get started, implementing and deploying basics stuff, I then enhanced it all for my own use. This one from Part Time Larry https://www.youtube.com/watch?v=XPTb3adEQEE (his [github](https://github.com/hackingthemarkets)) and this one for the discord bot from freeCodeCamp.org : https://www.youtube.com/watch?v=SPTfmiYiuok.
-
-I won't go into full details so if you're a novice you might want to go through the videos first (at least the first one for the first part) but not necessary if you only want to take a grasp of what's happening here, otherwise if you already master even a bit of Flask, APIs, webhooks and TradingView pinescripts you can easily follow along (I will try to add more technical explanations over time or a glossary).
+In order to build that app I relied on two great videos to get started, implementing and deploying basics stuff, I then enhanced it all for my own use. This one from Part Time Larry https://www.youtube.com/watch?v=XPTb3adEQEE (his [github](https://github.com/hackingthemarkets))
 
 &nbsp;
 
 
 # TradingView <a name="tradingview"></a>
 
-Fist of all, to be able to use TradingView webhooks you will need to subscribe to the pro plan for approximately 12$ per month (a free month trial is available), and you can use my referral link to sign up so we all save 30$ when upgrading to a paid plan : https://www.tradingview.com/gopro/?share_your_love=lth_elm.
+Fist of all, to be able to use TradingView webhooks you will need to subscribe to the pro plan for approximately 12$ per month (a free month trial is available)
 
 ## Pinescript Strategy <a name="pinescriptstrategy"></a>
 
@@ -51,10 +43,6 @@ Now that this is done we can get down to business. We will need to write a pines
 [Here](pinestrategies/Quick-Mean-Reversion-Strat.pine) is the script that I wrote you can have a look (better copy-paste it on tradingview since the syntax highlighting for pinescripts is not yet integrated on GitHub). I added my own touch so I can visualize the stop-loss and take-profit targets on chart.
 
 *Of course it is far from being perfect so don't use it for you own trading since it wasn't written for this purpose and it's a strategy going against the main trend (thus very risky). **However we will see in part 2 how we can improve it and integrate our own choice thanks to the discord bot.***
-
-![Mean reversion strategy BTCPERP](./README_images/MeanReversionStrategyBTCPERP.png "Mean reversion strategy BTCPERP")
-
-As you can see we have multiples exit positions and some are even at breakeven, our integration with the FTX api is compatible for this style of trading, you can set the % you want to close for these intermediary TP in the ```tp_close``` variable. 
 
 However, if you want to keep it to the bottom line you can just set **one entry** and **one fixed exit**. For that you will need to uncomment the ```strategy.exit()``` lines for both ```if goLong``` and ```if goShort``` and remove the two following lines:
 
@@ -419,110 +407,6 @@ The alert message needs to be modified a bit, here is how it will look like if s
 }
 ```
 *[alertmodel.txt](alertmodel.txt)*
-
-As you can see it's very much similar to the first payload but we've also added the **chart url** so that it can directly be sent in the discord channel along the other parameters.
-
-The webhook url also need to be changed to https://the-link-of-your-flask-app.com/tradingview-to-discord-study since this is how it is set in [app.py](app.py).
-
-```python
-@app.route("/tradingview-to-discord-study", methods=['POST'])
-def discord_study_tv():
-```
-
-___
-
-This lattest route works almost exactly as the first one except instead of calling the *order* function to place an order it will call ```study_alert()``` from [logbot.py](logbot.py). Like  ```logs()``` *```study_alert(json.dumps(data), chart_url)```* send messages to a specified discord channel including the payload and the chart url.
-
-```python
-import requests
-
-DISCORD_STUDY_URL = "https://discord.com/api/webhooks/xxxxx"
-study_format = {
-	"username": "Tradingview Alert",
-	"avatar_url": "https://pbs.twimg.com/profile_images/1418656582888525833/p4fZd3KR_400x400.jpg",
-	"content": ""
-}
-
-def study_alert(message, chart_url):
-    try:
-        json_logs = study_format
-        json_logs['content'] = ">>> " + message + " \n\n" + chart_url
-        requests.post(DISCORD_STUDY_URL, json=json_logs)
-    except:
-        pass
-```
-
-![Discord tradingview alert](./README_images/DiscordTVAlert.PNG "Discord tradingview alert")
-
-___
-
-The discord bot files is not hosted on Heroku but instead [Repl.it](https://replit.com/) however you can still find them [here](discord_bot/discord_main.py) under ./discord_bot/.
-
-Our discord bot will read every message sent to the chat and if one start with ```!payload``` it will **load what comes next** as a **json** and add to it the **webhook passphrase** needed by our app for which it will send a post request including the payload.
-
-```python
-import discord, requests, json, os
-
-WEBHOOK_URL = os.environ['WEBHOOK_URL']
-WEBHOOK_PASSPHRASE = os.environ['WEBHOOK_PASSPHRASE']
-
-client = discord.Client()
-
-@client.event
-async def on_message(message):
-  if message.author == client.user:
-    return
-
-  msg = message.content
-
-  if msg.startswith('!payload '):
-    data = json.loads(msg[len('!payload '):])
-    data['passphrase'] = WEBHOOK_PASSPHRASE
-    await message.channel.send('Payload received, now processing...')
-    success = post_tradingview-webhook(json.dumps(data))
-
-    if success:
-      await message.channel.send(':white_check_mark: Order posted with success !')
-    else:
-      await message.channel.send(':x: An error must have occured, please check the logs for more information...')   
-
-client.run(ORDER_BOT_TOKEN)
-```
-
-That same bot that received the payload will sent intermediary messages to the discord channel to **inform the user about the progression** and result : order posted with success or error.
-
-&nbsp;
-___
-
-
-# Links and Addresses <a name="linksaddresses"></a>
-
-* TradingView :
-
-https://www.tradingview.com/gopro/?share_your_love=lth_elm for both saving 30$ when upgrading to a paid plan.
-
-* FTX :
-
-https://ftx.com/#a=26368756 and you receive a 5,00 % fee discount on all your trades.
-
-* Binance and Binance future:
-
-https://accounts.binance.com/en/register?ref=MJB86NYU to save 10% comission fee.
-
-https://www.binance.com/en/futures/ref/154947021 for binance future and to also save 10%.
-
-&nbsp;
-
-If it was interesting and you've learned something feel free to support me by sending any amount of cryptos to one of the following addresses :)
-
-* Ethereum, Matic Mainet and BSC : *0xa1eF4B0eA4f2a45Dc60baba368BDB8656B6fD580*
-
-* Solana : *2c1F4Rs63nL1VCuLP7Qz776X1NemfNUfYjMWTALQzrwh*
-
-* Bitcoin : *3DXrC7ZXxYa4bFbjL3ofgWxfeeiAzzHWf4*
-
-
-&nbsp;
 
 
 **Thank you for reading all the way through !**
